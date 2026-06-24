@@ -6,6 +6,8 @@ ChaWork is a local-first AI Employee Workbench for turning repeatable knowledge 
 
 It is not a general chat app, not a new agent kernel, and not an official OpenAI product. ChaWork uses a ChaWork-maintained runtime facade based on the open-source OpenAI Codex project, while the ChaWork desktop app owns Workspace, Employee, Review, and Dream product state.
 
+Official website: [https://chavoai.cn/](https://chavoai.cn/)
+
 ## Core Loop
 
 ```text

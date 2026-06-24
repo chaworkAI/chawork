@@ -157,11 +157,6 @@ The public repositories are maintained under the `chaworkAI` GitHub organization
 
 Initial admin maintainers must be members of the `@chaworkAI/maintainers` team or explicitly listed in `.github/CODEOWNERS`.
 
-Initial maintainer invitation emails:
-
-- 1104133609@qq.com
-- 970795248@qq.com
-
 Default branch protection should require:
 
 - Pull request review before merge.

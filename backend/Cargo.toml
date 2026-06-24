@@ -5,7 +5,7 @@ edition = "2021"
 license = "Apache-2.0"
 description = "ChaWork desktop backend and workspace services."
 repository = "https://github.com/chaworkAI/chawork"
-homepage = "https://github.com/chaworkAI/chawork"
+homepage = "https://chavoai.cn/"
 default-run = "chawork"
 
 [[bin]]

@@ -4,7 +4,7 @@
   "private": true,
   "description": "Local-first AI Employee Workbench powered by a ChaWork-maintained Codex runtime facade.",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/chaworkAI/chawork#readme",
+  "homepage": "https://chavoai.cn/",
   "repository": {
     "type": "git",
     "url": "https://github.com/chaworkAI/chawork.git"
