@@ -1,0 +1,12 @@
+# Statically link the Visual C++ runtime on Windows so target machines
+# don't need the VC++ Redistributable installed.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+# Speed up local release builds by overriding codex-rs workspace's fat LTO
+# and single codegen unit. ThinLTO links much faster with minimal perf loss.
+# Strip debug symbols to reduce binary size.
+[profile.release]
+lto = "thin"
+codegen-units = 16
+strip = "symbols"

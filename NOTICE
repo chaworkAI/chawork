@@ -1,0 +1,10 @@
+ChaWork
+Copyright 2026 ChaWork contributors
+
+ChaWork integrates with ChaWork Runtime, which is based on the open-source
+OpenAI Codex project. OpenAI Codex is an upstream open-source project by
+OpenAI. ChaWork is independently maintained and is not an official OpenAI
+product.
+
+ChaWork Runtime preserves the upstream OpenAI Codex license and notices in the
+runtime repository.

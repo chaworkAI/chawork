@@ -1,0 +1,49 @@
+# macOS
+.DS_Store
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment and local config
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Node / frontend
+node_modules/
+.pnpm-store/
+dist/
+build/
+coverage/
+
+# Rust
+target/
+backend/binaries/
+
+# Codex / local workspace state
+.chawork/
+.claude/
+.codex/
+.shared/
+.tooling/
+.superpowers/
+
+# ChaWork local workspace data
+example-space/
+logs/
+proposals/
+raw/
+schema/
+sessions/
+templates/
+wiki/

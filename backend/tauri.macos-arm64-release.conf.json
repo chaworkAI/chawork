@@ -1,0 +1,11 @@
+{
+  "bundle": {
+    "createUpdaterArtifacts": true,
+    "targets": ["app", "dmg"],
+    "externalBin": [
+      "binaries/chawork-runtime",
+      "binaries/codex",
+      "binaries/chawork-mcp-server"
+    ]
+  }
+}

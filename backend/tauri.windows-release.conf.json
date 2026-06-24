@@ -1,0 +1,20 @@
+{
+  "bundle": {
+    "createUpdaterArtifacts": true,
+    "targets": ["nsis"],
+    "externalBin": [
+      "binaries/chawork-runtime",
+      "binaries/codex",
+      "binaries/chawork-mcp-server"
+    ],
+    "windows": {
+      "webviewInstallMode": {
+        "type": "offlineInstaller"
+      },
+      "nsis": {
+        "installMode": "currentUser",
+        "installerHooks": "windows/nsis-hooks.nsh"
+      }
+    }
+  }
+}

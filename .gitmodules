@@ -1,0 +1,4 @@
+[submodule "chawork-runtime"]
+	path = chawork-runtime
+	url = https://github.com/chaworkAI/chawork-runtime.git
+	branch = main

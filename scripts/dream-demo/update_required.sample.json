@@ -1,0 +1,18 @@
+{
+  "decision": "update_required",
+  "target_employee_id": "dream-demo",
+  "dream_run_id": "dream-run-REPLACE-WITH-ACTUAL-RUN-ID",
+  "summary": "用户在多次会话中反复要求：中文、简洁、默认不超过 3 句话，复杂内容先询问是否展开。",
+  "source_sessions": [
+    { "workspace_id": "REPLACE-WORKSPACE-ID", "session_id": "REPLACE-SESSION-ID" }
+  ],
+  "updates": [
+    {
+      "section": "沟通风格",
+      "action": "add",
+      "content": "- 默认使用中文回复\n- 默认不超过 3 句话\n- 内容复杂时先询问用户是否需要展开\n- 用户明确要求要点时，只输出 bullet，不要附加「补充说明」段落",
+      "reason": "演示会话中用户多次抱怨回复过长、要求 bullet 与 3 句上限"
+    }
+  ],
+  "impact": "新会话将默认更短、更结构化，减少冗长回复"
+}
