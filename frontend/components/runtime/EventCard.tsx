@@ -1,6 +1,7 @@
 import { useState } from "react"
 
 import { applyLabelTemplate } from "@/lib/builtinLabels"
+import { formatSummaryLabel, humanizeToolName } from "@/lib/runtimeSummary"
 import { Badge } from "@/components/ui/badge"
 import { MonospaceBlockCard } from "@/components/ui/monospace-block-card"
 import { useUiLabel } from "@/hooks/useUiLabel"
@@ -41,6 +42,65 @@ function formatJson(value: unknown): string {
     return JSON.stringify(value, null, 2)
   } catch {
     return String(value)
+  }
+}
+
+function eventTitle(
+  event: RuntimeEvent,
+  getLabel: (key: string, fallback: string) => string,
+): string {
+  const ev = event.event
+  switch (ev.type) {
+    case "thinking":
+      return applyLabelTemplate(
+        getLabel("events.thinking.prefix", "思考 · {{summary}}"),
+        { summary: ev.summary },
+      )
+    case "tool_call":
+    case "file_change":
+    case "retrieval":
+    case "error":
+    case "skill_write":
+    case "plan_update":
+      return formatSummaryLabel(event, getLabel)
+    case "tool_delta":
+      return applyLabelTemplate(
+        getLabel("events.tool_delta.prefix", "工具输出 · {{tool}}"),
+        { tool: humanizeToolName(ev.tool, getLabel) },
+      )
+    case "tool_result":
+      return applyLabelTemplate(
+        ev.error
+          ? getLabel("events.tool_result.fail", "工具结果（失败） · {{id}}")
+          : getLabel("events.tool_result.ok", "工具结果 · {{id}}"),
+        { id: ev.tool ?? ev.id },
+      )
+    case "file_change_delta":
+      return getLabel("events.file_change_delta.title", "文件变更输出")
+    case "mcp_oauth_login_completed":
+      return applyLabelTemplate(
+        ev.success
+          ? getLabel("events.mcp_oauth.completed", "MCP OAuth 完成 · {{server}}")
+          : getLabel("events.mcp_oauth.failed", "MCP OAuth 失败 · {{server}}"),
+        { server: ev.server_name },
+      )
+    case "mcp_server_status_updated":
+      return applyLabelTemplate(
+        getLabel("events.mcp_server_status", "MCP 服务 · {{server}} · {{status}}"),
+        { server: ev.server_name, status: ev.status },
+      )
+    case "plan_delta":
+      return getLabel("events.plan_delta.title", "计划生成中")
+    case "plan_done":
+      return getLabel("events.plan_done.title", "计划完成")
+    case "skill_refresh":
+      return getLabel("events.skill_refresh.title", "Runtime 刷新")
+    case "turn_complete":
+      return getLabel("events.turn_complete.title", "本轮完成")
+    case "cancelled":
+      return getLabel("events.cancelled.title", "已取消")
+    default:
+      return event.displayLabel
   }
 }
 
@@ -129,7 +189,7 @@ function EventCardBody({
     case "file_change_delta":
       return (
         <MonospaceBlockCard
-          label="输出"
+          label={getLabel("events.file_change_delta.output", "输出")}
           maxHeightClassName="max-h-[220px]"
           tone="muted"
         >
@@ -205,7 +265,11 @@ function EventCardBody({
     case "plan_done":
       return (
         <MonospaceBlockCard
-          label={ev.type === "plan_done" ? "计划" : "计划片段"}
+          label={
+            ev.type === "plan_done"
+              ? getLabel("events.plan_done.body_label", "计划")
+              : getLabel("events.plan_delta.body_label", "计划片段")
+          }
           maxHeightClassName="max-h-[220px]"
           tone="muted"
         >
@@ -249,7 +313,9 @@ function EventCardBody({
         <div className="space-y-2">
           <Badge variant="outline">{getLabel("events.retrieval.badge", "知识检索")}</Badge>
           <p className="text-[12px] text-ink">
-            <span className="text-muted-foreground">查询: </span>
+            <span className="text-muted-foreground">
+              {getLabel("events.retrieval.query_label", "查询: ")}
+            </span>
             {ev.query}
           </p>
           {ev.results.length > 0 ? (
@@ -289,7 +355,7 @@ function EventCardBody({
       return (
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge>Skill 写入</Badge>
+            <Badge>{getLabel("events.skill_write.badge", "Skill 写入")}</Badge>
             <span className="text-[12px] text-ink">
               {ev.scope} / {ev.executor}
             </span>
@@ -316,7 +382,7 @@ function EventCardBody({
       return (
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge>Runtime 刷新</Badge>
+            <Badge>{getLabel("events.skill_refresh.badge", "Runtime 刷新")}</Badge>
             {ev.generation !== undefined ? (
               <span className="text-[12px] text-ink">generation: {ev.generation}</span>
             ) : null}
@@ -348,6 +414,7 @@ export function EventCard({ event, defaultOpen }: EventCardProps) {
   const [open, setOpen] = useState(defaultOpen ?? false)
   const dot = dotClasses[event.displayStatus]
   const { event: ev } = event
+  const title = eventTitle(event, getLabel)
 
   const rich =
     ev.type === "tool_call" ||
@@ -385,7 +452,7 @@ export function EventCard({ event, defaultOpen }: EventCardProps) {
         <span className={`size-[9px] shrink-0 rounded-full ${dot}`} aria-hidden />
         <span className="flex min-w-0 flex-1 items-start gap-0">
           <SummaryPrefix ev={ev} getLabel={getLabel} />
-          <span className="min-w-0 flex-1 leading-snug">{event.displayLabel}</span>
+          <span className="min-w-0 flex-1 leading-snug">{title}</span>
         </span>
       </summary>
       {detailBlock ? (

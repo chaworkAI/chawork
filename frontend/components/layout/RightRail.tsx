@@ -3,6 +3,7 @@ import { Activity, X } from "lucide-react"
 
 import { RuntimeInspector, type RuntimeInspectorProps } from "@/components/runtime/RuntimeInspector"
 import { Button } from "@/components/ui/button"
+import { useUiLabel } from "@/hooks/useUiLabel"
 import { formatSummaryDetail, formatSummaryLabel, pickSummaryEvents } from "@/lib/runtimeSummary"
 import { cn } from "@/lib/utils"
 import type { RuntimeBusyState } from "@/stores/runtime"
@@ -15,11 +16,14 @@ export interface RightRailProps {
   status: RuntimeBusyState
 }
 
-function runtimeChipLabel(status: RuntimeBusyState): string {
-  if (status === "error") return "错误"
-  if (status === "idle") return "空闲"
-  if (status === "pending_request") return "待确认"
-  return "运行中"
+function runtimeChipLabel(
+  status: RuntimeBusyState,
+  getLabel: (key: string, fallback: string) => string,
+): string {
+  if (status === "error") return getLabel("runtime.summary.status_error", "错误")
+  if (status === "idle") return getLabel("runtime.summary.status_idle", "空闲")
+  if (status === "pending_request") return getLabel("runtime.summary.status_pending", "待确认")
+  return getLabel("runtime.summary.status_running", "运行中")
 }
 
 function runtimeChipClass(status: RuntimeBusyState): string {
@@ -29,16 +33,20 @@ function runtimeChipClass(status: RuntimeBusyState): string {
   return "border-success/30 bg-success/10 text-success"
 }
 
-function companionStatusLabel(status: RuntimeBusyState): string {
-  if (status === "error") return "需要处理"
-  if (status === "idle") return "待命"
-  if (status === "pending_request") return "等你确认"
-  if (status === "cancelling") return "收尾中"
-  if (status === "thinking") return "思考中"
-  return "专注中"
+function companionStatusLabel(
+  status: RuntimeBusyState,
+  getLabel: (key: string, fallback: string) => string,
+): string {
+  if (status === "error") return getLabel("runtime.companion.status_error", "需要处理")
+  if (status === "idle") return getLabel("runtime.companion.status_idle", "待命")
+  if (status === "pending_request") return getLabel("runtime.companion.status_pending", "等你确认")
+  if (status === "cancelling") return getLabel("runtime.companion.status_cancelling", "收尾中")
+  if (status === "thinking") return getLabel("runtime.companion.status_thinking", "思考中")
+  return getLabel("runtime.companion.status_executing", "专注中")
 }
 
 export function RightRail({ runtime, status }: RightRailProps) {
+  const getLabel = useUiLabel()
   const layout = useShellLayout()
   const drawerOpen = useUiStore((s) => s.rightRailDrawerOpen)
   const setRightRailDrawerOpen = useUiStore((s) => s.setRightRailDrawerOpen)
@@ -52,16 +60,18 @@ export function RightRail({ runtime, status }: RightRailProps) {
         <section className="flex min-h-0 flex-1 flex-col p-4">
           <div className="mb-3 flex items-start justify-between gap-2">
             <div>
-              <p className="text-[16px] font-bold text-ink">执行摘要</p>
+              <p className="text-[16px] font-bold text-ink">
+                {getLabel("runtime.summary.title", "执行摘要")}
+              </p>
               <p className="mt-0.5 text-[13px] text-muted-foreground">
-                {runtimeChipLabel(status)}
+                {runtimeChipLabel(status, getLabel)}
               </p>
             </div>
             <Button
               type="button"
               variant="outline"
               size="icon-sm"
-              aria-label="打开 Runtime 详情"
+              aria-label={getLabel("runtime.summary.open_details", "打开 Runtime 详情")}
               onClick={() => setRightRailDrawerOpen(true)}
             >
               <Activity className="size-4" />
@@ -75,8 +85,8 @@ export function RightRail({ runtime, status }: RightRailProps) {
               </li>
             ) : (
               recentEvents.map((event) => {
-                const summaryLabel = formatSummaryLabel(event)
-                const summaryDetail = formatSummaryDetail(event)
+                const summaryLabel = formatSummaryLabel(event, getLabel)
+                const summaryDetail = formatSummaryDetail(event, getLabel)
                 return (
                   <li
                     key={event.id}
@@ -111,7 +121,7 @@ export function RightRail({ runtime, status }: RightRailProps) {
           <section
             className="vovo-stage mt-auto"
             data-status={status}
-            aria-label={`VOVO，${companionStatusLabel(status)}`}
+            aria-label={`VOVO, ${companionStatusLabel(status, getLabel)}`}
           >
             <div className="vovo-scene" aria-hidden>
               <div className="vovo-orbit" />
@@ -152,7 +162,7 @@ export function RightRail({ runtime, status }: RightRailProps) {
                   type="button"
                   variant="ghost"
                   size="icon-sm"
-                  aria-label="关闭"
+                  aria-label={getLabel("runtime.summary.close_details", "关闭")}
                   onClick={closeDrawer}
                 >
                   <X className="size-4" />
@@ -177,10 +187,10 @@ export function RightRail({ runtime, status }: RightRailProps) {
           "fixed bottom-6 right-4 z-40 flex cursor-pointer items-center gap-2 rounded-full border px-3 py-2 shadow-panel backdrop-blur-[18px] transition-colors hover:bg-[rgba(255,255,255,0.72)]",
           runtimeChipClass(status),
         )}
-        aria-label="展开 Runtime 面板"
+        aria-label={getLabel("runtime.summary.expand_panel", "展开 Runtime 面板")}
       >
         <Activity className="size-4 shrink-0" />
-        <span className="text-[12px] font-medium">{runtimeChipLabel(status)}</span>
+        <span className="text-[12px] font-medium">{runtimeChipLabel(status, getLabel)}</span>
       </button>
 
       {drawerOpen ? (
@@ -206,7 +216,7 @@ export function RightRail({ runtime, status }: RightRailProps) {
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                aria-label="关闭"
+                aria-label={getLabel("runtime.summary.close_details", "关闭")}
                 onClick={closeDrawer}
               >
                 <X className="size-4" />

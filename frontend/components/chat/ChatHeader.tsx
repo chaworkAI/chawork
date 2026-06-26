@@ -104,7 +104,7 @@ export function ChatHeader({
                 onClick={onWorkspaceConfigClick}
                 className="text-[11px] text-muted-foreground underline-offset-2 hover:text-ink hover:underline"
               >
-                工作区配置
+                {getLabel("chat.header.workspace_config", "工作区配置")}
               </button>
             ) : null}
           </div>
@@ -119,7 +119,7 @@ export function ChatHeader({
             className="inline-flex min-h-7 items-center gap-1.5 rounded-[10px] bg-[#f5f7fa] px-2.5 text-[12px] font-bold text-muted-foreground transition-colors hover:bg-[#eef2f6] hover:text-ink dark:bg-panel-soft dark:hover:bg-panel-raised"
           >
             <FolderOpen className="size-4" strokeWidth={1.75} />
-            <span>项目资料</span>
+            <span>{getLabel("chat.header.project_materials", "项目资料")}</span>
           </button>
         ) : null}
         {allChips.length > 0 ? (

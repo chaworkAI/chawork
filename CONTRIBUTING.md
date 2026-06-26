@@ -1,6 +1,6 @@
 # Contributing to ChaWork
 
-Thank you for helping improve ChaWork. This project has a strict product/runtime boundary, so contribution quality depends as much on preserving ownership rules as on code changes.
+Thank you for helping improve ChaWork. ChaWork has a clear product/runtime boundary; following it keeps reviews focused and helps changes land safely.
 
 ## Language
 
@@ -8,7 +8,7 @@ The default public documentation language is English.
 
 - `README.md` is the default English product entry.
 - `README.zh-CN.md` is the Simplified Chinese mirror and must stay structurally aligned with `README.md`.
-- `CONTRIBUTING.md` is English by default. Short Chinese notes may be added in this file when useful, but do not create `CONTRIBUTING.zh-CN.md`.
+- `CONTRIBUTING.md` is English by default. Short Chinese notes are welcome when they help local context; keep the contribution guide in this file so parallel rules do not drift.
 
 ## Development Setup
 
@@ -32,8 +32,8 @@ Before coding, identify the layer that owns the behavior you want to change:
 
 - Frontend changes live under `frontend/` and should call Tauri commands instead of talking to model providers directly.
 - Backend product-state changes live under `backend/src/commands/` and `backend/src/services/`.
-- Runtime protocol changes live in the `chawork-runtime` submodule and must preserve the stable ChaWork runtime contract.
-- Workspace, Employee, and Dream behavior must keep a single persistence owner. Do not duplicate state updates across frontend, backend, and runtime.
+- Runtime protocol changes live in the `chawork-runtime` submodule and need to preserve the stable ChaWork runtime contract.
+- Workspace, Employee, and Dream behavior should keep a single persistence owner. Keep state updates in the owning layer instead of duplicating them across frontend, backend, and runtime.
 
 Recommended workflow:
 
@@ -93,27 +93,27 @@ cargo test --manifest-path chawork-runtime/codex-rs/Cargo.toml -p chawork-runtim
 
 ## Architecture Rules
 
-ChaWork app code must consume the stable `chawork-runtime` contract. It must not parse Codex raw app-server protocol as product state.
+ChaWork app code uses the stable `chawork-runtime` contract for product behavior. Raw Codex app-server protocol is available for debug and inspection, not as product state.
 
 Keep these invariants intact:
 
 - Codex owns thread/turn/tool/MCP/skill/approval/sandbox execution semantics.
 - `chawork-runtime` owns the ChaWork-facing runtime contract, capability matrix, event mapper, raw policy, audit, and Dream runtime prompt/schema execution.
 - ChaWork backend owns Workspace, Session, Employee, Dream persistence, runtime process pool, provider env injection, and transcript/review persistence.
-- Frontend owns product UI projection only.
-- Raw/debug events can be inspected, but must not drive transcript, busy state, review queue, Dream state, or persistent product decisions.
-- Provider credentials must not be committed, logged, written into workspace files, or sent to frontend payloads.
+- Frontend owns product UI projection.
+- Raw/debug events can be inspected, but product state comes from the runtime contract, not raw Codex payloads.
+- Provider credentials stay out of commits, logs, workspace files, and frontend payloads.
 
 ## Runtime Changes
 
 Runtime-facing changes need extra care:
 
 - Public schema changes start in `chawork-runtime/codex-rs/chawork-runtime/src/contract.rs`.
-- Codex protocol surface changes must be registered in the capability matrix.
-- Request fields must be mapped to Codex or rejected by validation. Silent ignore is a bug.
-- Unknown Codex notifications must be classified as normalized, raw, unsupported, or drop-with-reason.
-- Unknown Codex ServerRequest variants must be classified and audited.
-- Raw request behavior must go through `raw_policy.rs`.
+- Codex protocol surface changes need to be registered in the capability matrix.
+- Request fields need to be mapped to Codex or rejected by validation. Silently ignored fields are treated as bugs.
+- Unknown Codex notifications need to be classified as normalized, raw, unsupported, or drop-with-reason.
+- Unknown Codex ServerRequest variants need to be classified and audited.
+- Raw request behavior goes through `raw_policy.rs`.
 - Dream prompt/schema stay inside `chawork-runtime`; final Employee prompt writes stay in the ChaWork Employee service.
 
 ## Pull Requests
@@ -126,7 +126,7 @@ Each PR should include:
 - Screenshots or recordings for visible UI changes.
 - Runtime boundary notes when touching contract, mapper, raw policy, audit, lifecycle, provider/security policy, Dream, or session persistence.
 
-Do not mix unrelated cleanup with feature or bug-fix changes.
+Keep unrelated cleanup in separate PRs from feature or bug-fix changes.
 
 ## Documentation
 
@@ -136,13 +136,11 @@ Public product documentation lives in:
 - `README.zh-CN.md`
 - `CONTRIBUTING.md`
 
-When changing the public product README, update both English and Chinese versions in the same PR. Keep their section structure aligned.
+When changing the public product README, update both English and Chinese versions in the same PR. Keep their section structure aligned and keep the audience in mind: first-time product/technical evaluators, then developers setting up the project locally.
 
-The cleaned public repository intentionally does not include the internal design archive. Public onboarding should be possible from the two README files and this CONTRIBUTING file.
+The public repository focuses on onboarding from the two README files and this CONTRIBUTING file. Internal design archives are maintained separately.
 
 ## Security Reports
-
-Do not report ChaWork issues to OpenAI Bugcrowd. ChaWork is independently maintained.
 
 Use GitHub private vulnerability reporting when it is enabled on the repository. If it is not enabled, contact the maintainers through the private channel listed by the repository owner.
 
@@ -155,7 +153,7 @@ The public repositories are maintained under the `chaworkAI` GitHub organization
 - [chaworkAI/chawork](https://github.com/chaworkAI/chawork)
 - [chaworkAI/chawork-runtime](https://github.com/chaworkAI/chawork-runtime)
 
-Initial admin maintainers must be members of the `@chaworkAI/maintainers` team or explicitly listed in `.github/CODEOWNERS`.
+Initial admin maintainers are expected to be members of the `@chaworkAI/maintainers` team or explicitly listed in `.github/CODEOWNERS`.
 
 Default branch protection should require:
 

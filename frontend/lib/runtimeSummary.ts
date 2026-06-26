@@ -1,5 +1,7 @@
 import type { CodexEvent, RuntimeEvent } from "@/types/events"
 
+export type SummaryLabelResolver = (key: string, fallback: string) => string
+
 /** Event types worth a single line in the compact execution summary rail. */
 const SUMMARY_ACTION_TYPES = new Set<CodexEvent["type"]>([
   "tool_call",
@@ -10,28 +12,44 @@ const SUMMARY_ACTION_TYPES = new Set<CodexEvent["type"]>([
   "plan_update",
 ])
 
-const FILE_ACTION_LABEL: Record<string, string> = {
-  create: "新建",
-  modify: "修改",
-  delete: "删除",
+const FILE_ACTION_LABEL: Record<string, { key: string; fallback: string }> = {
+  create: { key: "events.file.create", fallback: "新建" },
+  modify: { key: "events.file.modify", fallback: "修改" },
+  delete: { key: "events.file.delete", fallback: "删除" },
 }
 
-const TOOL_NAME_LABEL: Record<string, string> = {
-  search: "搜索",
-  search_knowledge: "知识检索",
-  grep: "搜索",
-  ripgrep: "搜索",
-  read: "读取",
-  read_file: "读取",
-  write: "写入",
-  write_file: "写入",
-  edit: "编辑",
-  apply_patch: "编辑",
-  bash: "命令",
-  shell: "命令",
-  exec: "命令",
-  list_dir: "列目录",
-  glob: "匹配文件",
+const TOOL_NAME_LABEL: Record<string, { key: string; fallback: string }> = {
+  search: { key: "runtime.summary.tool.search", fallback: "搜索" },
+  search_knowledge: { key: "runtime.summary.tool.search_knowledge", fallback: "知识检索" },
+  grep: { key: "runtime.summary.tool.search", fallback: "搜索" },
+  ripgrep: { key: "runtime.summary.tool.search", fallback: "搜索" },
+  read: { key: "runtime.summary.tool.read", fallback: "读取" },
+  read_file: { key: "runtime.summary.tool.read", fallback: "读取" },
+  write: { key: "runtime.summary.tool.write", fallback: "写入" },
+  write_file: { key: "runtime.summary.tool.write", fallback: "写入" },
+  edit: { key: "runtime.summary.tool.edit", fallback: "编辑" },
+  apply_patch: { key: "runtime.summary.tool.edit", fallback: "编辑" },
+  bash: { key: "runtime.summary.tool.command", fallback: "命令" },
+  shell: { key: "runtime.summary.tool.command", fallback: "命令" },
+  exec: { key: "runtime.summary.tool.command", fallback: "命令" },
+  list_dir: { key: "runtime.summary.tool.list_dir", fallback: "列目录" },
+  glob: { key: "runtime.summary.tool.glob", fallback: "匹配文件" },
+}
+
+function label(
+  getLabel: SummaryLabelResolver | undefined,
+  key: string,
+  fallback: string,
+): string {
+  return getLabel ? getLabel(key, fallback) : fallback
+}
+
+function applyTemplate(template: string, vars: Record<string, string>): string {
+  let s = template
+  for (const [key, value] of Object.entries(vars)) {
+    s = s.split(`{{${key}}}`).join(value)
+  }
+  return s
 }
 
 function basename(path: string): string {
@@ -47,13 +65,15 @@ function truncate(text: string, max: number): string {
 }
 
 /** Turn raw tool ids (mcp__foo__search) into a short Chinese-friendly label. */
-export function humanizeToolName(tool: string): string {
+export function humanizeToolName(tool: string, getLabel?: SummaryLabelResolver): string {
   const normalized = tool.trim()
-  if (!normalized) return "工具"
+  if (!normalized) return label(getLabel, "runtime.summary.tool.generic", "工具")
 
   const segments = normalized.split(/[/.__:-]+/).filter(Boolean)
   const candidate = (segments[segments.length - 1] ?? normalized).toLowerCase()
-  return TOOL_NAME_LABEL[candidate] ?? segments[segments.length - 1] ?? normalized
+  const configured = TOOL_NAME_LABEL[candidate]
+  if (configured) return label(getLabel, configured.key, configured.fallback)
+  return segments[segments.length - 1] ?? normalized
 }
 
 /** Whether an event should appear in the compact execution summary rail. */
@@ -111,34 +131,55 @@ function looksLikeJson(text: string): boolean {
 }
 
 /** Primary one-line label for summary cards (never raw JSON). */
-export function formatSummaryLabel(event: RuntimeEvent): string {
+export function formatSummaryLabel(
+  event: RuntimeEvent,
+  getLabel?: SummaryLabelResolver,
+): string {
   const ev = event.event
 
   switch (ev.type) {
     case "tool_call":
-      return `调用 · ${humanizeToolName(ev.tool)}`
+      return applyTemplate(
+        label(getLabel, "runtime.summary.tool_call", "调用 · {{tool}}"),
+        { tool: humanizeToolName(ev.tool, getLabel) },
+      )
     case "file_change": {
-      const action = FILE_ACTION_LABEL[ev.action] ?? "变更"
-      return `${action} · ${basename(ev.path)}`
+      const configured = FILE_ACTION_LABEL[ev.action]
+      const action = configured
+        ? label(getLabel, configured.key, configured.fallback)
+        : label(getLabel, "runtime.summary.file_changed", "变更")
+      return applyTemplate(
+        label(getLabel, "runtime.summary.file_change", "{{action}} · {{path}}"),
+        { action, path: basename(ev.path) },
+      )
     }
     case "retrieval":
-      return `检索 · ${truncate(ev.query, 36)}`
+      return applyTemplate(
+        label(getLabel, "runtime.summary.retrieval", "检索 · {{query}}"),
+        { query: truncate(ev.query, 36) },
+      )
     case "error":
-      return truncate(ev.message || "出现错误", 48)
+      return truncate(ev.message || label(getLabel, "events.error.fatal", "出现错误"), 48)
     case "skill_write":
       return `Skill · ${basename(ev.target_path)}`
     case "plan_update":
       return ev.explanation
-        ? `计划 · ${truncate(ev.explanation, 36)}`
-        : "更新计划"
+        ? applyTemplate(
+            label(getLabel, "runtime.summary.plan", "计划 · {{summary}}"),
+            { summary: truncate(ev.explanation, 36) },
+          )
+        : label(getLabel, "runtime.summary.plan_update", "更新计划")
     default:
-      if (looksLikeJson(event.displayLabel)) return "执行中"
+      if (looksLikeJson(event.displayLabel)) return label(getLabel, "runtime.summary.executing", "执行中")
       return event.displayLabel
   }
 }
 
 /** Short secondary line for summary cards (never raw JSON blobs). */
-export function formatSummaryDetail(event: RuntimeEvent): string | undefined {
+export function formatSummaryDetail(
+  event: RuntimeEvent,
+  getLabel?: SummaryLabelResolver,
+): string | undefined {
   const ev = event.event
 
   if (ev.type === "tool_call") {
@@ -161,7 +202,10 @@ export function formatSummaryDetail(event: RuntimeEvent): string | undefined {
 
   if (ev.type === "retrieval") {
     if (ev.results.length === 0) return undefined
-    return `${ev.results.length} 条结果`
+    return applyTemplate(
+      label(getLabel, "runtime.summary.results_count", "{{n}} 条结果"),
+      { n: String(ev.results.length) },
+    )
   }
 
   if (ev.type === "file_change") {

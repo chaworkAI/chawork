@@ -1,6 +1,7 @@
 import { ChevronRight, FolderOpen } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { useUiLabel } from "@/hooks/useUiLabel"
 import { useUiStore } from "@/stores/ui"
 
 export interface SidebarIconRailProps {
@@ -12,6 +13,7 @@ export interface SidebarIconRailProps {
 export function SidebarIconRail({
   onOpenWorkspace,
 }: SidebarIconRailProps) {
+  const getLabel = useUiLabel()
   const setSidebarCollapsed = useUiStore((s) => s.setSidebarCollapsed)
 
   const iconBtn =
@@ -24,8 +26,8 @@ export function SidebarIconRail({
         variant="outline"
         size="icon"
         className="size-[30px] rounded-full border-line bg-white text-muted-foreground shadow-none hover:bg-[#f6f7f9] hover:text-ink dark:bg-panel dark:hover:bg-panel-raised"
-        title="展开工作区栏"
-        aria-label="展开工作区栏"
+        title={getLabel("sidebar.expand_workspace_rail", "展开工作区栏")}
+        aria-label={getLabel("sidebar.expand_workspace_rail", "展开工作区栏")}
         onClick={() => setSidebarCollapsed(false)}
       >
         <ChevronRight className="size-4" />
@@ -35,7 +37,8 @@ export function SidebarIconRail({
         variant="outline"
         size="icon"
         className={iconBtn}
-        title="打开工作区"
+        title={getLabel("sidebar.open_workspace_short", "打开工作区")}
+        aria-label={getLabel("sidebar.open_workspace_short", "打开工作区")}
         onClick={onOpenWorkspace}
       >
         <FolderOpen className="size-4" />

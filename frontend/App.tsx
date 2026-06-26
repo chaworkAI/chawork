@@ -662,7 +662,7 @@ export function App() {
                 <button
                   type="button"
                   className="grid size-[26px] place-items-center rounded-full border border-line bg-white text-[16px] font-extrabold leading-none text-muted-foreground hover:bg-[#f6f7f9] hover:text-ink"
-                  aria-label="折叠工作区栏"
+                  aria-label={getLabel("sidebar.collapse_workspace_rail", "折叠工作区栏")}
                   onClick={() => setSidebarCollapsed(true)}
                 >
                   ‹
