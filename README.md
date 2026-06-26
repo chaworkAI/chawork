@@ -70,10 +70,6 @@ Open or add a workspace
 - **OpenAI-compatible providers**: configure a base URL, model, and API key without hard-coding a provider into the repository.
 - **Codex-based runtime boundary**: use [OpenAI Codex](https://github.com/openai/codex) through the stable `chawork-runtime` contract instead of coupling product state to raw Codex events.
 
-## Project Status
-
-ChaWork is under active development. The desktop app currently targets macOS and Windows; Linux desktop builds are not provided. The source build path is the best way to try the project today. Treat local builds as developer builds unless a GitHub release explicitly describes a signed installer and release channel.
-
 ## Quick Start
 
 ### Prerequisites
