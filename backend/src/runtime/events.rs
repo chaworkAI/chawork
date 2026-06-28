@@ -34,7 +34,7 @@ pub enum ChaWorkEvent {
     #[serde(rename = "thinking_delta")]
     ThinkingDelta { content: String },
     #[serde(rename = "thinking_done")]
-    ThinkingDone,
+    ThinkingDone { content: String },
     #[serde(rename = "tool_call")]
     ToolCall {
         tool: String,
@@ -47,6 +47,8 @@ pub enum ChaWorkEvent {
         tool: String,
         content: String,
     },
+    #[serde(rename = "tool_complete")]
+    ToolComplete { id: String, tool: String },
     #[serde(rename = "tool_result")]
     ToolResult {
         id: String,
@@ -58,9 +60,12 @@ pub enum ChaWorkEvent {
     },
     #[serde(rename = "file_change")]
     FileChange {
+        id: String,
         path: String,
         diff: String,
         action: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        status: Option<String>,
     },
     #[serde(rename = "file_change_delta")]
     FileChangeDelta { id: String, content: String },
@@ -216,6 +221,24 @@ mod tests {
         assert_eq!(file["type"], "file_change_delta");
         assert_eq!(file["id"], "item_f");
         assert_eq!(file["content"], "applying patch\n");
+    }
+
+    #[test]
+    fn thinking_done_and_completion_events_keep_terminal_content() {
+        let thinking = serde_json::to_value(ChaWorkEvent::ThinkingDone {
+            content: "final reasoning".to_string(),
+        })
+        .expect("serialize thinking done");
+        assert_eq!(thinking["type"], "thinking_done");
+        assert_eq!(thinking["content"], "final reasoning");
+
+        let tool = serde_json::to_value(ChaWorkEvent::ToolComplete {
+            id: "item_t".to_string(),
+            tool: "web_search".to_string(),
+        })
+        .expect("serialize tool complete");
+        assert_eq!(tool["type"], "tool_complete");
+        assert_eq!(tool["id"], "item_t");
     }
 
     #[test]

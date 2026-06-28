@@ -18,6 +18,7 @@ pub(super) enum RuntimeProjection {
 pub(super) struct RuntimeProjectionState {
     assistant_accum: String,
     assistant_done_emitted: bool,
+    reasoning_accum: String,
     last_tool_error: Option<String>,
     latest_usage: Option<TokenUsage>,
     has_image_input: bool,
@@ -237,9 +238,16 @@ pub(super) fn project_runtime_notification(
         }
         "reasoning/delta" => {
             let content = params["content"].as_str().unwrap_or("").to_string();
+            state.reasoning_accum.push_str(&content);
             RuntimeProjection::Events(vec![ChaWorkEvent::ThinkingDelta { content }])
         }
-        "reasoning/done" => RuntimeProjection::Events(vec![ChaWorkEvent::ThinkingDone]),
+        "reasoning/done" => {
+            let content = params["content"]
+                .as_str()
+                .unwrap_or(state.reasoning_accum.as_str())
+                .to_string();
+            RuntimeProjection::Events(vec![ChaWorkEvent::ThinkingDone { content }])
+        }
         "tool/call_started" => {
             let id = params["itemId"]
                 .as_str()
@@ -271,14 +279,9 @@ pub(super) fn project_runtime_notification(
                 .unwrap_or("")
                 .to_string();
             let tool = params["tool"].as_str().unwrap_or("tool").to_string();
-            let args = params["args"].clone();
             let error_payload = params.get("error").cloned();
             let result_payload = params.get("result").cloned();
-            let mut events = vec![ChaWorkEvent::ToolCall {
-                tool: tool.clone(),
-                args,
-                id: id.clone(),
-            }];
+            let mut events = Vec::new();
             if result_payload.is_some() || error_payload.as_ref().is_some_and(|v| !v.is_null()) {
                 let err_str = tool_error_message(error_payload.as_ref());
                 if let Some(message) = err_str.as_ref() {
@@ -290,19 +293,29 @@ pub(super) fn project_runtime_notification(
                     result: result_payload.unwrap_or(serde_json::Value::Null),
                     error: err_str,
                 });
+            } else {
+                events.push(ChaWorkEvent::ToolComplete { id, tool });
             }
             RuntimeProjection::Events(events)
         }
         "file_change/completed" | "file_change/updated" => {
+            let id = params["itemId"]
+                .as_str()
+                .or_else(|| params["eventId"].as_str())
+                .unwrap_or("")
+                .to_string();
+            let status = params["status"].as_str().map(ToString::to_string);
             let events = params["changes"]
                 .as_array()
                 .map(|changes| {
                     changes
                         .iter()
                         .map(|change| ChaWorkEvent::FileChange {
+                            id: id.clone(),
                             path: change["path"].as_str().unwrap_or("").to_string(),
                             diff: change["diff"].as_str().unwrap_or("").to_string(),
                             action: change["action"].as_str().unwrap_or("modify").to_string(),
+                            status: status.clone(),
                         })
                         .collect::<Vec<_>>()
                 })
@@ -532,6 +545,55 @@ mod tests {
                 assert_eq!(usage.output_tokens, 4);
             }
             other => panic!("expected turn completion with cached usage, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn runtime_projection_preserves_reasoning_done_content() {
+        let mut state = RuntimeProjectionState::default();
+
+        match project_runtime_notification(
+            "reasoning/done",
+            &json!({ "content": "final reasoning body" }),
+            &mut state,
+        ) {
+            RuntimeProjection::Events(events) => {
+                assert_eq!(events.len(), 1);
+                match &events[0] {
+                    ChaWorkEvent::ThinkingDone { content } => {
+                        assert_eq!(content, "final reasoning body");
+                    }
+                    other => panic!("expected thinking_done, got {other:?}"),
+                }
+            }
+            other => panic!("expected reasoning done event, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn runtime_projection_tool_completed_does_not_repeat_tool_call() {
+        let mut state = RuntimeProjectionState::default();
+
+        match project_runtime_notification(
+            "tool/call_completed",
+            &json!({
+                "itemId": "tool_1",
+                "tool": "web_search",
+                "args": { "query": "runtime" }
+            }),
+            &mut state,
+        ) {
+            RuntimeProjection::Events(events) => {
+                assert_eq!(events.len(), 1);
+                match &events[0] {
+                    ChaWorkEvent::ToolComplete { id, tool } => {
+                        assert_eq!(id, "tool_1");
+                        assert_eq!(tool, "web_search");
+                    }
+                    other => panic!("expected tool_complete, got {other:?}"),
+                }
+            }
+            other => panic!("expected tool completion event, got {other:?}"),
         }
     }
 

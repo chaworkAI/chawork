@@ -45,11 +45,12 @@ export type CodexEvent = CodexEventOwner & (
   | { type: "assistant_done"; content: string }
   | { type: "thinking"; summary: string }
   | { type: "thinking_delta"; content: string }
-  | { type: "thinking_done" }
+  | { type: "thinking_done"; content?: string }
   | { type: "tool_call"; tool: string; args: unknown; id: string }
   | { type: "tool_delta"; tool: string; content: string; id: string }
+  | { type: "tool_complete"; id: string; tool: string }
   | { type: "tool_result"; id: string; tool?: string; result: unknown; error?: string }
-  | { type: "file_change"; path: string; diff: string; action: FileAction }
+  | { type: "file_change"; id?: string; path: string; diff: string; action: FileAction; status?: string }
   | { type: "file_change_delta"; id: string; content: string }
   | {
       type: "mcp_oauth_login_completed"

@@ -151,9 +151,17 @@ function statusForEvent(event: CodexEvent): RuntimeBusyState | null {
     case "thinking_delta":
       return "thinking"
     case "tool_call":
+    case "tool_delta":
+    case "tool_complete":
     case "tool_result":
     case "file_change":
+    case "file_change_delta":
     case "retrieval":
+    case "plan_update":
+    case "plan_delta":
+    case "plan_done":
+    case "mcp_oauth_login_completed":
+    case "mcp_server_status_updated":
     case "skill_write":
     case "skill_refresh":
       return "executing"
@@ -526,7 +534,7 @@ export const useRuntimeStore = create<RuntimeStore>((set, get) => ({
           Object.keys(pendingRequests).length > 0
             ? "pending_request"
             : runtime.status === "pending_request"
-              ? "idle"
+              ? "executing"
               : runtime.status
         return {
           ...runtime,
