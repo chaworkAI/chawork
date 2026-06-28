@@ -3,6 +3,7 @@ export type RuntimeEventType =
   | "assistant_delta"
   | "tool_call"
   | "tool_delta"
+  | "tool_complete"
   | "tool_result"
   | "retrieval"
   | "file_change"
@@ -47,6 +48,12 @@ export interface ToolDeltaEvent extends BaseEvent {
   call_id?: string
 }
 
+export interface ToolCompleteEvent extends BaseEvent {
+  type: "tool_complete"
+  tool: string
+  call_id?: string
+}
+
 export interface ToolResultEvent extends BaseEvent {
   type: "tool_result"
   tool: string
@@ -65,6 +72,7 @@ export interface RetrievalEvent extends BaseEvent {
 export interface FileChangeEvent extends BaseEvent {
   type: "file_change"
   action: "write" | "delete" | "rename"
+  id?: string
   path: string
   diff?: string
   summary?: string
@@ -160,6 +168,7 @@ export type RuntimeEvent =
   | AssistantDeltaEvent
   | ToolCallEvent
   | ToolDeltaEvent
+  | ToolCompleteEvent
   | ToolResultEvent
   | RetrievalEvent
   | FileChangeEvent

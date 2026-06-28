@@ -27,6 +27,12 @@ function streamEventToCodex(event: StreamRuntimeEvent): CodexEvent | null {
         content: event.content,
         id: event.call_id ?? crypto.randomUUID(),
       }
+    case "tool_complete":
+      return {
+        type: "tool_complete",
+        tool: event.tool,
+        id: event.call_id ?? crypto.randomUUID(),
+      }
     case "tool_result":
       return {
         type: "tool_result",
@@ -48,6 +54,7 @@ function streamEventToCodex(event: StreamRuntimeEvent): CodexEvent | null {
     case "file_change":
       return {
         type: "file_change",
+        id: event.id,
         path: event.path,
         diff: event.diff ?? "",
         action:
@@ -150,6 +157,8 @@ function displayLabel(event: StreamRuntimeEvent): string {
       return `工具输出 · ${event.tool}`
     case "tool_result":
       return `工具结果 · ${event.tool}`
+    case "tool_complete":
+      return `工具完成 · ${event.tool}`
     case "retrieval":
       return `知识检索 · ${event.query.slice(0, 40)}`
     case "file_change":
@@ -191,6 +200,8 @@ function displayStatus(event: StreamRuntimeEvent): DisplayRuntimeEvent["displayS
       return "info"
     case "tool_result":
       return event.is_error ? "error" : "success"
+    case "tool_complete":
+      return "success"
     case "file_change":
       return "info"
     case "file_change_delta":

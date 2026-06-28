@@ -75,6 +75,11 @@ function eventTitle(
           : getLabel("events.tool_result.ok", "工具结果 · {{id}}"),
         { id: ev.tool ?? ev.id },
       )
+    case "tool_complete":
+      return applyLabelTemplate(
+        getLabel("events.tool_complete.prefix", "工具完成 · {{tool}}"),
+        { tool: humanizeToolName(ev.tool, getLabel) },
+      )
     case "file_change_delta":
       return getLabel("events.file_change_delta.title", "文件变更输出")
     case "mcp_oauth_login_completed":
@@ -308,6 +313,40 @@ function EventCardBody({
         </MonospaceBlockCard>
       )
     }
+    case "tool_complete":
+      return (
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline">{getLabel("events.tool_status.completed", "完成")}</Badge>
+          <span className="break-all font-mono text-[12px] text-ink">{ev.tool}</span>
+        </div>
+      )
+    case "turn_complete": {
+      if (!ev.usage) return null
+      const allRows: Array<[string, number | undefined]> = [
+        ["input", ev.usage.input_tokens ?? ev.usage.prompt_tokens],
+        ["cached input", ev.usage.cached_input_tokens],
+        ["output", ev.usage.output_tokens ?? ev.usage.completion_tokens],
+        ["reasoning output", ev.usage.reasoning_output_tokens],
+        ["total", ev.usage.total_tokens],
+        ["context window", ev.usage.model_context_window],
+      ]
+      const rows = allRows.filter(([, value]) => value !== undefined)
+      return (
+        <div className="grid gap-1.5">
+          {rows.map(([label, value]) => (
+            <div
+              key={label}
+              className="flex items-center justify-between gap-3 rounded-[8px] bg-[rgba(255,252,246,0.7)] px-2 py-1.5 text-[12px]"
+            >
+              <span className="font-mono text-[10px] uppercase text-muted-foreground">
+                {label}
+              </span>
+              <span className="font-mono font-bold text-ink">{value}</span>
+            </div>
+          ))}
+        </div>
+      )
+    }
     case "retrieval":
       return (
         <div className="space-y-2">
@@ -419,6 +458,7 @@ export function EventCard({ event, defaultOpen }: EventCardProps) {
   const rich =
     ev.type === "tool_call" ||
     ev.type === "tool_delta" ||
+    ev.type === "tool_complete" ||
     ev.type === "file_change" ||
     ev.type === "file_change_delta" ||
     ev.type === "plan_update" ||
@@ -426,6 +466,7 @@ export function EventCard({ event, defaultOpen }: EventCardProps) {
     ev.type === "plan_done" ||
     ev.type === "thinking" ||
     ev.type === "tool_result" ||
+    ev.type === "turn_complete" ||
     ev.type === "retrieval" ||
     ev.type === "runtime_debug" ||
     ev.type === "skill_write" ||

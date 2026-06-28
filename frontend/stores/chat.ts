@@ -55,6 +55,7 @@ interface ChatStore {
   sendMessage: (content: string, attachments?: Attachment[]) => Promise<void>
   addAssistantDelta: (content: string) => void
   addThinkingDelta: (delta: string) => void
+  completeThinkingContent: (content?: string) => void
   appendThinkingAnimated: (chunk: string) => Promise<void>
   finishThinking: () => void
   toggleThinkingExpanded: (messageId: string) => void
@@ -192,6 +193,23 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         return {}
       }
       msgs[idx] = { ...last, isThinkingStreaming: false }
+      return { messages: msgs }
+    }),
+
+  completeThinkingContent: (content) =>
+    set((state) => {
+      const msgs = [...state.messages]
+      const idx = msgs.length - 1
+      const last = msgs[idx]
+      if (last?.role !== "assistant") {
+        return {}
+      }
+      const nextContent = content?.trim() ? content : last.thinkingContent
+      msgs[idx] = {
+        ...last,
+        thinkingContent: nextContent,
+        isThinkingStreaming: false,
+      }
       return { messages: msgs }
     }),
 

@@ -90,6 +90,7 @@ function addReview(
 export function useCodexEvents() {
   const addAssistantDelta = useChatStore((s) => s.addAssistantDelta)
   const addThinkingDelta = useChatStore((s) => s.addThinkingDelta)
+  const completeThinkingContent = useChatStore((s) => s.completeThinkingContent)
   const finishThinking = useChatStore((s) => s.finishThinking)
   const completeAssistantMessage = useChatStore((s) => s.completeAssistantMessage)
   const revealAssistantAnimated = useChatStore((s) => s.revealAssistantAnimated)
@@ -199,7 +200,13 @@ export function useCodexEvents() {
         }
 
         case "thinking_done":
-          if (activeView) finishThinking()
+          if (activeView) {
+            if (payload.content?.trim()) {
+              completeThinkingContent(payload.content)
+            } else {
+              finishThinking()
+            }
+          }
           break
 
         case "tool_call":
@@ -227,6 +234,20 @@ export function useCodexEvents() {
               ),
               "info",
               payload.content,
+            ),
+          )
+          break
+
+        case "tool_complete":
+          addRuntimeEvent(
+            ownerInput,
+            runtimeEvent(
+              payload,
+              applyLabelTemplate(
+                getLabel("events.tool_complete.prefix", "工具完成 · {{tool}}"),
+                { tool: payload.tool },
+              ),
+              "success",
             ),
           )
           break
@@ -513,6 +534,14 @@ export function useCodexEvents() {
           break
 
         case "turn_complete": {
+          addRuntimeEvent(
+            ownerInput,
+            runtimeEvent(
+              payload,
+              getLabel("events.turn_complete.title", "本轮完成"),
+              "success",
+            ),
+          )
           if (!activeView) break
           const msgs = useChatStore.getState().messages
           const last = msgs[msgs.length - 1]
@@ -585,6 +614,7 @@ export function useCodexEvents() {
   }, [
     addAssistantDelta,
     addThinkingDelta,
+    completeThinkingContent,
     finishThinking,
     completeAssistantMessage,
     revealAssistantAnimated,
